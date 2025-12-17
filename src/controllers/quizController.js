@@ -1,6 +1,6 @@
 
 // src/controllers/quizController.js
-import asyncHandler from "express-async-handler";
+import asyncHandler from "../utils/asyncHandler.js";
 import Quiz from "../models/Quiz.js";
 import Course from "../models/Course.js";
 import Enrollment from "../models/Enrollment.js";

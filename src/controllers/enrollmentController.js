@@ -1,5 +1,5 @@
 // src/controllers/enrollmentController.js
-import asyncHandler from "express-async-handler";
+import asyncHandler from "../utils/asyncHandler.js";
 import Enrollment from "../models/Enrollment.js";
 import Course from "../models/Course.js";
 

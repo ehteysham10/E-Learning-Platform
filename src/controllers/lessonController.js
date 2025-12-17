@@ -1,6 +1,6 @@
 
 // src/controllers/lessonController.js
-import asyncHandler from "express-async-handler";
+import asyncHandler from "../utils/asyncHandler.js";
 import Lesson from "../models/Lesson.js";
 import Course from "../models/Course.js";
 import { uploadVideoToCloudinary } from "../utils/cloudinary.js";

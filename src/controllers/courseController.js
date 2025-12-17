@@ -1,6 +1,6 @@
 
 // src/controllers/courseController.js
-import asyncHandler from "express-async-handler";
+import asyncHandler from "../utils/asyncHandler.js";
 import Course from "../models/Course.js";
 import { isOwnerOrAdmin } from "../utils/permissions.js";
 
@@ -204,4 +204,22 @@ export const searchCourses = asyncHandler(async (req, res) => {
     total: courses.length,
     courses,
   });
-});
+});  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
