@@ -1,36 +1,3 @@
-// // src/routes/lessonRoutes.js
-// import express from "express";
-// import auth from "../middleware/auth.js";
-// import authorize from "../middleware/roleMiddleware.js";
-// import {
-//   createLesson,
-//   getLessonsByCourse,
-//   updateLesson,
-//   deleteLesson,
-// } from "../controllers/lessonController.js";
-
-// const router = express.Router();
-
-// // Course-based lessons
-// router.get("/courses/:courseId/lessons", getLessonsByCourse);
-// router.post(
-//   "/courses/:courseId/lessons",
-//   auth,
-//   authorize("admin", "teacher"),
-//   createLesson
-// );
-
-// // Lesson-level actions
-// router.put("/lessons/:id", auth, authorize("admin", "teacher"), updateLesson);
-// router.delete("/lessons/:id", auth, authorize("admin", "teacher"), deleteLesson);
-
-// export default router;
-
-
-
-
-
-
 
 import express from "express";
 import auth from "../middleware/auth.js";
@@ -41,12 +8,7 @@ import { createLesson, getLessonsByCourse, updateLesson, deleteLesson } from "..
 const router = express.Router();
 
 // Create lesson with video
-router.post(
-  "/courses/:courseId/lessons",
-  auth,
-  authorize("teacher", "admin"),
-  uploadVideo.single("video"),
-  createLesson
+router.post( "/courses/:courseId/lessons",auth,authorize("teacher", "admin"),uploadVideo.single("video"),createLesson
 );
 
 // Get lessons of a course

@@ -19,11 +19,7 @@ const courseSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
-    level: {
-      type: String,
-      enum: ["beginner", "intermediate", "advanced"],
-      default: "beginner",
-    },
+
     thumbnail: {
       type: String, // Cloudinary URL
     },
@@ -57,4 +53,13 @@ const courseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+
+// 🔍 TEXT SEARCH INDEX
+courseSchema.index({
+  title: "text",
+  description: "text",
+  category: "text",
+  tags: "text",
+});
 export default mongoose.model("Course", courseSchema);

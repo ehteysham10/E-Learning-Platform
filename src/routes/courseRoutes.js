@@ -1,3 +1,4 @@
+
 // src/routes/courseRoutes.js
 import express from "express";
 import auth from "../middleware/auth.js";
@@ -8,18 +9,25 @@ import {
   getCourseById,
   updateCourse,
   deleteCourse,
+  searchCourses,
+  getMyCourses,
   togglePublishCourse,
 } from "../controllers/courseController.js";
 
 const router = express.Router();
 
-// Public
+// STATIC SEARCH FIRST
+router.get("/search", searchCourses); // ✅ ONLY "/search", no extra "courses"
+// get own courses list
+router.get("/my", auth, authorize("teacher", "admin"), getMyCourses);
+
+// PUBLIC
 router.get("/", getPublishedCourses);
 
-// Mixed (auth optional, but required for unpublished access)
+// MIXED
 router.get("/:id", auth, getCourseById);
 
-// Protected
+// PROTECTED
 router.post("/", auth, authorize("admin", "teacher"), createCourse);
 router.put("/:id", auth, authorize("admin", "teacher"), updateCourse);
 router.patch("/:id/publish", auth, authorize("admin", "teacher"), togglePublishCourse);

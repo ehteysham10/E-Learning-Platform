@@ -13,7 +13,7 @@ import {
 const router = express.Router();
 
 // Course-based quizzes
-router.get("/courses/:courseId/quizzes", getQuizzesByCourse);
+router.get("/courses/:courseId/quizzes",auth, getQuizzesByCourse);
 router.post("/courses/:courseId/quizzes",auth,authorize("admin", "teacher"),createQuiz);
 
 // Quiz-level actions

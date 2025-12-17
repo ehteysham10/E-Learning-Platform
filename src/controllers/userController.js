@@ -94,7 +94,43 @@ export const updateMe = asyncHandler(async (req, res) => {
 export const getUserById = asyncHandler(async (req, res) => {
   const user = await findUserByIdOrFail(req.params.id);
   res.json(formatUser(user));
+}); 
+
+
+
+
+// Soft delete a user (disable account)
+export const softDeleteUser = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  if (req.user._id.toString() === userId) {
+    return res.status(400).json({ message: "You cannot delete yourself" });
+  }
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  user.isDeleted = true;
+  user.deletedAt = new Date();
+  await user.save();
+
+  res.json({ message: "User account disabled successfully" });
 });
+
+// Restore a soft-deleted user
+export const restoreUser = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  user.isDeleted = false;
+  user.deletedAt = null;
+  await user.save();
+
+  res.json({ message: "User restored successfully" });
+});
+
 
 // -------------------------
 // SAVE or update FCM token

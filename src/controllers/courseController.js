@@ -1,6 +1,13 @@
+
 // src/controllers/courseController.js
 import asyncHandler from "express-async-handler";
 import Course from "../models/Course.js";
+import { isOwnerOrAdmin } from "../utils/permissions.js";
+
+/**
+ * Allowed fields for update to avoid overwriting sensitive data
+ */
+const allowedUpdateFields = ["title", "description", "category", "level", "tags"];
 
 /**
  * @desc    Create new course
@@ -8,15 +15,14 @@ import Course from "../models/Course.js";
  * @access  Teacher, Admin
  */
 export const createCourse = asyncHandler(async (req, res) => {
-  const { title, description, category, level, tags } = req.body;
+  const { title, description, category, tags } = req.body;
 
   const course = await Course.create({
     title,
     description,
     category,
-    level,
     tags,
-    teacher: req.user._id,
+    teacher: req.user._id, // owner of course
   });
 
   res.status(201).json(course);
@@ -41,33 +47,46 @@ export const getPublishedCourses = asyncHandler(async (req, res) => {
  * @access  Public (published) | Owner/Admin (unpublished)
  */
 export const getCourseById = asyncHandler(async (req, res) => {
-  const course = await Course.findById(req.params.id).populate(
-    "teacher",
-    "name avatar"
-  );
-
+  const course = await Course.findById(req.params.id).populate("teacher", "name avatar");
   if (!course) {
     res.status(404);
     throw new Error("Course not found");
   }
 
-  // If not published, only owner or admin can view
-  if (
-    !course.isPublished &&
-    req.user &&
-    (req.user.role === "admin" ||
-      course.teacher._id.toString() === req.user._id.toString())
-  ) {
-    return res.json(course);
-  }
-
-  if (!course.isPublished) {
+  if (!course.isPublished && !isOwnerOrAdmin(req.user, course.teacher._id)) {
     res.status(403);
     throw new Error("Course not published");
   }
 
   res.json(course);
+}); 
+
+
+
+
+
+
+/**
+ * @desc    Get all courses created by the logged-in teacher/admin
+ * @route   GET /api/courses/my
+ * @access  Teacher/Admin
+ */
+export const getMyCourses = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  // Admin sees all courses, teacher only their own
+  const filter = user.role === "admin" ? {} : { teacher: user._id };
+
+  const courses = await Course.find(filter)
+    .populate("teacher", "name avatar")
+    .sort({ createdAt: -1 });
+
+  res.json({
+    total: courses.length,
+    courses,
+  });
 });
+
 
 /**
  * @desc    Update course
@@ -76,23 +95,22 @@ export const getCourseById = asyncHandler(async (req, res) => {
  */
 export const updateCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
-
   if (!course) {
     res.status(404);
     throw new Error("Course not found");
   }
 
-  if (
-    req.user.role !== "admin" &&
-    course.teacher.toString() !== req.user._id.toString()
-  ) {
+  if (!isOwnerOrAdmin(req.user, course.teacher)) {
     res.status(403);
     throw new Error("Not authorized");
   }
 
-  Object.assign(course, req.body);
-  await course.save();
+  // Only update allowed fields
+  allowedUpdateFields.forEach((field) => {
+    if (req.body[field] !== undefined) course[field] = req.body[field];
+  });
 
+  await course.save();
   res.json(course);
 });
 
@@ -103,16 +121,12 @@ export const updateCourse = asyncHandler(async (req, res) => {
  */
 export const togglePublishCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
-
   if (!course) {
     res.status(404);
     throw new Error("Course not found");
   }
 
-  if (
-    req.user.role !== "admin" &&
-    course.teacher.toString() !== req.user._id.toString()
-  ) {
+  if (!isOwnerOrAdmin(req.user, course.teacher)) {
     res.status(403);
     throw new Error("Not authorized");
   }
@@ -132,20 +146,62 @@ export const togglePublishCourse = asyncHandler(async (req, res) => {
  */
 export const deleteCourse = asyncHandler(async (req, res) => {
   const course = await Course.findById(req.params.id);
-
   if (!course) {
     res.status(404);
     throw new Error("Course not found");
   }
 
-  if (
-    req.user.role !== "admin" &&
-    course.teacher.toString() !== req.user._id.toString()
-  ) {
+  if (!isOwnerOrAdmin(req.user, course.teacher)) {
     res.status(403);
-    throw new Error("Not authorized");
+    throw new Error("Not authorized! Only Teacher can create course");
   }
 
   await course.deleteOne();
   res.json({ message: "Course deleted successfully" });
+});
+
+
+
+
+/**
+ * @desc    Search courses (full-text + tags)
+ * @route   GET /api/courses/search
+ * @access  Public
+ */
+export const searchCourses = asyncHandler(async (req, res) => {
+  const { q, tags, category } = req.query;
+
+  const filter = { isPublished: true };
+
+  // Category filter
+  if (category) {
+    filter.category = category;
+  }
+
+  // Tags filter (comma separated)
+  if (tags) {
+    filter.tags = { $in: tags.split(",") };
+  }
+
+  let courses;
+
+  // Full-text search
+  if (q) {
+    courses = await Course.find(
+      {
+        ...filter,
+        $text: { $search: q },
+      },
+      {
+        score: { $meta: "textScore" },
+      }
+    ).sort({ score: { $meta: "textScore" } });
+  } else {
+    courses = await Course.find(filter);
+  }
+
+  res.json({
+    total: courses.length,
+    courses,
+  });
 });

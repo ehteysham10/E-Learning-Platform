@@ -1,3 +1,4 @@
+
 // src/models/User.js
 import mongoose from "mongoose";
 import crypto from "crypto";
@@ -37,6 +38,7 @@ const userSchema = new mongoose.Schema(
     gender: { type: String, enum: ["Male", "Female"], required: false },
 
     role: { type: String, enum: ["admin", "teacher", "student"], default: "student" },
+    isDeleted: { type: Boolean, default: false }, // ✅ soft delete / disable user
 
     emailVerified: { type: Boolean, default: false },
     emailVerificationToken: String,
